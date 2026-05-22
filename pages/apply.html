@@ -177,7 +177,7 @@
       </div>
     </aside>
 
-    <div
+    <!-- <div
       class="lead-popup"
       id="preApplyNotice"
       role="dialog"
@@ -289,7 +289,7 @@
           </div>
         </div>
       </div>
-    </div>
+    </div> -->
 
     <!-- ===== PAGE HERO ===== -->
     <header class="page-hero">
@@ -387,14 +387,15 @@
           <aside class="step-rail" aria-label="Form steps">
             <div class="step-rail-title">Application Steps</div>
             <ol class="step-list" id="stepList">
-              <li class="active" data-step="1">Course Preference</li>
-              <li data-step="2">Personal Details</li>
-              <li data-step="3">Contact &amp; Address</li>
-              <li data-step="4">Parent / Guardian</li>
-              <li data-step="5">Academic Records</li>
-              <li data-step="6">Entrance Exams</li>
-              <li data-step="7">Document Uploads</li>
-              <li data-step="8">Review &amp; Confirm</li>
+              <li class="active" data-step="1">Pre-Application Checklist</li>
+              <li data-step="2">Course Preference</li>
+              <li data-step="3">Personal Details</li>
+              <li data-step="4">Contact &amp; Address</li>
+              <li data-step="5">Parent / Guardian</li>
+              <li data-step="6">Academic Records</li>
+              <li data-step="7">Entrance Exams</li>
+              <li data-step="8">Document Uploads</li>
+              <li data-step="9">Review &amp; Confirm</li>
             </ol>
             <div class="step-rail-progress">
               <div class="step-rail-progress-bar" id="progressBar"></div>
@@ -421,9 +422,9 @@
             <div class="step-indicator-mobile" id="stepIndicatorMobile">
               <div class="sim-meta">
                 <span class="sim-label"
-                  >Step <strong id="simCurrent">1</strong> of 8</span
+                  >Step <strong id="simCurrent">1</strong> of 9</span
                 >
-                <span class="sim-name" id="simName">Course Preference</span>
+                <span class="sim-name" id="simName">Pre-Application Checklist</span>
               </div>
               <div class="sim-bar">
                 <div class="sim-bar-fill" id="simBarFill"></div>
@@ -431,9 +432,115 @@
             </div>
 
             <form id="applyForm" novalidate>
-              <!-- ============== STEP 1: COURSE PREFERENCE ============== -->
+              <!-- Step 1: Notice -->
               <section class="apply-step active" data-step="1">
-                <h2><span class="apply-step-num">1</span> Course Preference</h2>
+                <h2><span class="apply-step-num">1</span> Pre-Application Checklist</h2>
+
+                <!-- <p class="apply-step-sub">
+                  Please keep the following documents ready. These will be
+                  required during the application.
+                </p> -->
+
+                <div class="lead-popup-body">
+                  <p style="font-size: 0.95rem; color: var(--clr-gray-700)">
+                    Candidates are requested to keep the following documents
+                    ready. These will be required during the application.
+                    Scanned copies must be uploaded with the application.
+                  </p>
+
+                  <ul
+                    class="fee-list"
+                    style="margin: 0.75rem 0 1rem; padding: 0"
+                  >
+                    <li>1. Passport size photo</li>
+                    <li>2. Scanned signature</li>
+                    <li>
+                      3. Rank card of JEE Mains 2026 and/or TS EAPCET 2026 (at
+                      least one). Upload both, if available.
+                    </li>
+                    <li>4. SSC / 10th class certificate</li>
+                    <li>
+                      5. Inter / 12th certificate if available, or attested
+                      short memo
+                    </li>
+                    <li>6. Aadhaar card</li>
+                    <li>
+                      7. Application / registration fee receipt (Rs. 2,000) paid
+                      online and the screenshot with UTR / reference details.
+                    </li>
+                  </ul>
+
+                  <div class="apply-info-tile" style="margin: 0 0 1rem">
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M12 6v12" />
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M8.5 9.5h6a2 2 0 0 1 0 4h-5a2 2 0 0 0 0 4h6" />
+                    </svg>
+
+                    <div>
+                      <div style="font-weight: 700; color: var(--clr-primary)">
+                        Bank details for fee payment
+                      </div>
+
+                      <div
+                        style="font-size: 0.9rem; color: var(--clr-gray-600)"
+                      >
+                        A/c Name: C R Rao AIMSCS<br />
+                        A/c No: 41786395872<br />
+                        IFSC Code: SBIN0005916<br />
+                        Bank: State Bank of India
+                      </div>
+                    </div>
+                  </div>
+
+                  <p style="font-size: 0.92rem; color: var(--clr-gray-700)">
+                    If you face any issue while applying or uploading documents,
+                    email all documents along with the downloaded application to
+
+                    <a
+                      href="mailto:btechadmissions.crr@gmail.com"
+                      style="color: var(--clr-accent); font-weight: 600"
+                    >
+                      btechadmissions.crr@gmail.com
+                    </a>
+
+                    . You can also contact us at
+
+                    <a
+                      href="tel:+917331155319"
+                      style="color: var(--clr-accent); font-weight: 600"
+                    >
+                      +91 7331 155 319
+                    </a>
+                    .
+                  </p>
+
+                  <div
+                    style="
+                      display: flex;
+                      justify-content: flex-end;
+                      flex-wrap: wrap;
+                      gap: 0.75rem;
+                      margin-top: 1.25rem;
+                    "
+                  >
+                    <button type="button" class="btn btn-primary" data-next>
+                      I Understand, Continue
+                    </button>
+                  </div>
+                </div>
+              </section>
+
+              <!-- ============== STEP 2: COURSE PREFERENCE ============== -->
+              <section class="apply-step" data-step="2">
+                <h2><span class="apply-step-num">2</span> Course Preference</h2>
                 <p class="apply-step-sub">
                   Rank the five B.Tech specializations in your order of
                   preference (1 = most preferred). Each rank can be assigned to
@@ -534,9 +641,9 @@
                 </div>
               </section>
 
-              <!-- ============== STEP 2: PERSONAL DETAILS ============== -->
-              <section class="apply-step" data-step="2">
-                <h2><span class="apply-step-num">2</span> Personal Details</h2>
+              <!-- ============== STEP 3: PERSONAL DETAILS ============== -->
+              <section class="apply-step" data-step="3">
+                <h2><span class="apply-step-num">3</span> Personal Details</h2>
                 <p class="apply-step-sub">
                   Enter your details exactly as per your SSC (Class&nbsp;10)
                   certificate.
@@ -744,10 +851,10 @@
                 </div>
               </section>
 
-              <!-- ============== STEP 3: CONTACT & ADDRESS ============== -->
-              <section class="apply-step" data-step="3">
+              <!-- ============== STEP 4: CONTACT & ADDRESS ============== -->
+              <section class="apply-step" data-step="4">
                 <h2>
-                  <span class="apply-step-num">3</span> Contact &amp; Address
+                  <span class="apply-step-num">4</span> Contact &amp; Address
                 </h2>
                 <p class="apply-step-sub">
                   All admission communication will go to this email and mobile
@@ -875,10 +982,10 @@
                 </div>
               </section>
 
-              <!-- ============== STEP 4: PARENT / GUARDIAN ============== -->
-              <section class="apply-step" data-step="4">
+              <!-- ============== STEP 5: PARENT / GUARDIAN ============== -->
+              <section class="apply-step" data-step="5">
                 <h2>
-                  <span class="apply-step-num">4</span> Parent / Guardian
+                  <span class="apply-step-num">5</span> Parent / Guardian
                   Details
                 </h2>
                 <p class="apply-step-sub">
@@ -1010,9 +1117,9 @@
                 </div>
               </section>
 
-              <!-- ============== STEP 5: ACADEMIC RECORDS ============== -->
-              <section class="apply-step" data-step="5">
-                <h2><span class="apply-step-num">5</span> Academic Records</h2>
+              <!-- ============== STEP 6: ACADEMIC RECORDS ============== -->
+              <section class="apply-step" data-step="6">
+                <h2><span class="apply-step-num">6</span> Academic Records</h2>
                 <p class="apply-step-sub">
                   Class 10 (SSC) and Class 12 (Intermediate / equivalent)
                   details.
@@ -1244,10 +1351,10 @@
                 </div>
               </section>
 
-              <!-- ============== STEP 6: ENTRANCE EXAMS ============== -->
-              <section class="apply-step" data-step="6">
+              <!-- ============== STEP 7: ENTRANCE EXAMS ============== -->
+              <section class="apply-step" data-step="7">
                 <h2>
-                  <span class="apply-step-num">6</span> Entrance Examinations
+                  <span class="apply-step-num">7</span> Entrance Examinations
                 </h2>
                 <p class="apply-step-sub">
                   Provide whichever exam scores are available — at least one of
@@ -1432,9 +1539,9 @@
                 </div>
               </section>
 
-              <!-- ============== STEP 7: DOCUMENT UPLOADS ============== -->
-              <section class="apply-step" data-step="7">
-                <h2><span class="apply-step-num">7</span> Document Uploads</h2>
+              <!-- ============== STEP 8: DOCUMENT UPLOADS ============== -->
+              <section class="apply-step" data-step="8">
+                <h2><span class="apply-step-num">8</span> Document Uploads</h2>
                 <p class="apply-step-sub">
                   Upload PDF / JPG / PNG files. Each file should be under
                   5&nbsp;MB. If you face technical issues, you can email them to
@@ -1777,10 +1884,10 @@
                 </div>
               </section>
 
-              <!-- ============== STEP 8: REVIEW & CONFIRM ============== -->
-              <section class="apply-step" data-step="8">
+              <!-- ============== STEP 9: REVIEW & CONFIRM ============== -->
+              <section class="apply-step" data-step="9">
                 <h2>
-                  <span class="apply-step-num">8</span> Review &amp; Confirm
+                  <span class="apply-step-num">9</span> Review &amp; Confirm
                 </h2>
                 <p class="apply-step-sub">
                   Please verify your details below. You can go back to any step
@@ -1882,7 +1989,7 @@
               </section>
 
               <!-- ============== SUCCESS ============== -->
-              <section class="apply-step" data-step="9" id="successStep">
+              <section class="apply-step" data-step="10" id="successStep">
                 <div class="apply-success" style="text-align: center">
                   <div class="apply-success-icon">
                     <svg

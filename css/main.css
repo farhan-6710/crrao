@@ -5155,7 +5155,7 @@ body.has-sticky-cta .whatsapp-float {
   margin: 0;
 }
 .lead-popup-body {
-  padding: 1.5rem;
+  padding: 1rem 1.5rem 1.5rem 1.5rem;
 }
 
 /* Map embed */

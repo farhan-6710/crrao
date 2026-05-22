@@ -16,7 +16,7 @@
   const GOOGLE_SCRIPT_URL =
     "https://script.google.com/macros/s/AKfycby5_OjCpzkkVoxx2bE1Y2YbGp9sfYqFUdtaFioYlH5_4w2KeBmT7adgUVXWyNIGsEQsIw/exec";
   const STORAGE_KEY = "crrao-btech-application-2026";
-  const TOTAL_STEPS = 8;
+  const TOTAL_STEPS = 9;
 
   const form = document.getElementById("applyForm");
   if (!form) return;
@@ -33,13 +33,14 @@
   let currentStep = 1;
 
   /* Hook the signature pad's resize function so we can call it
-     when step 8 becomes visible (canvas is 0×0 while hidden). */
+     when step 9 becomes visible (canvas is 0×0 while hidden). */
   let resizeSignaturePad = () => {};
 
   /* ──────────────────────────────────────────────────────────
      STEP NAVIGATION
      ────────────────────────────────────────────────────────── */
   const STEP_NAMES = [
+    "Pre-Application Checklist",
     "Course Preference",
     "Personal Details",
     "Contact & Address",
@@ -73,10 +74,10 @@
     if (simName) simName.textContent = STEP_NAMES[n - 1] || "";
     if (simFill) simFill.style.width = pct + "%";
 
-    /* Step 8 contains the signature pad — its canvas was hidden
+    /* Step 9 contains the signature pad — its canvas was hidden
        at script init (display:none), so its measured size was 0×0.
        Re-size now that it's visible, on the next paint. */
-    if (n === 8)
+    if (n === 9)
       requestAnimationFrame(() => requestAnimationFrame(resizeSignaturePad));
 
     window.scrollTo({
@@ -153,8 +154,8 @@
         clearError(el);
       });
 
-    /* Step 1: ensure at least one preference is set with rank 1, and ranks are unique among selected */
-    if (stepNum === 1) {
+    /* Step 2: ensure at least one preference is set with rank 1, and ranks are unique among selected */
+    if (stepNum === 2) {
       const selects = Array.from(stepEl.querySelectorAll(".pref-select"));
       const picked = selects.map((s) => s.value).filter((v) => v && v !== "0");
       if (!selects.some((s) => s.value === "1")) {
@@ -168,8 +169,8 @@
       }
     }
 
-    /* Step 6: at least one of JEE percentile or EAPCET rank required */
-    if (stepNum === 6) {
+    /* Step 7: at least one of JEE percentile or EAPCET rank required */
+    if (stepNum === 7) {
       const jee = stepEl.querySelector('[name="jee_percentile"]').value.trim();
       const eap = stepEl.querySelector('[name="eapcet_rank"]').value.trim();
       if (!jee && !eap) {
@@ -180,8 +181,8 @@
       }
     }
 
-    /* Step 7: at least one rank card file must be uploaded */
-    if (stepNum === 7) {
+    /* Step 8: at least one rank card file must be uploaded */
+    if (stepNum === 8) {
       const rankInputs = [
         "upload_jee",
         "upload_ts-eapcet",
@@ -200,8 +201,8 @@
       }
     }
 
-    /* Step 8: signature & declaration */
-    if (stepNum === 8) {
+    /* Step 9: signature & declaration */
+    if (stepNum === 9) {
       const decl = document.getElementById("declaration");
       if (!decl.checked) {
         valid = false;
@@ -257,7 +258,7 @@
   form.querySelectorAll("[data-next]").forEach((btn) => {
     btn.addEventListener("click", () => {
       if (validateStep(currentStep)) {
-        if (currentStep === 7) buildReviewSummary();
+        if (currentStep === 8) buildReviewSummary();
         showStep(Math.min(TOTAL_STEPS, currentStep + 1));
         saveDraft();
       }
@@ -381,7 +382,7 @@
   if (deepStep && deepStep !== 1) showStep(deepStep);
 
   /* ──────────────────────────────────────────────────────────
-     REVIEW SUMMARY (built before step 8 shown)
+     REVIEW SUMMARY (built before step 9 shown)
      ────────────────────────────────────────────────────────── */
   function buildReviewSummary() {
     const v = (name) => form.querySelector(`[name="${name}"]`)?.value || "—";
@@ -581,10 +582,10 @@
       }
     }
 
-    /* Expose to outer scope so showStep(8) can re-trigger sizing */
+    /* Expose to outer scope so showStep(9) can re-trigger sizing */
     resizeSignaturePad = doResize;
 
-    /* Try once now (if step 8 is somehow visible), then on resize. */
+    /* Try once now (if step 9 is somehow visible), then on resize. */
     doResize();
     window.addEventListener("resize", doResize);
 
@@ -671,7 +672,7 @@
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    if (!validateStep(8)) return;
+    if (!validateStep(9)) return;
     submitBtn.disabled = true;
     submitBtn.innerHTML = "Submitting…";
 
@@ -774,32 +775,32 @@
   /* ──────────────────────────────────────────────────────────
      PRE-APPLY NOTICE DIALOG
      ────────────────────────────────────────────────────────── */
-  const preApplyNotice = document.getElementById("preApplyNotice");
-  if (preApplyNotice) {
-    const closeButtons = preApplyNotice.querySelectorAll("[data-close-notice]");
-    const closeNotice = () => {
-      preApplyNotice.classList.remove("open");
-      preApplyNotice.setAttribute("aria-hidden", "true");
-      document.body.style.overflow = "";
-    };
-    const openNotice = () => {
-      preApplyNotice.classList.add("open");
-      preApplyNotice.setAttribute("aria-hidden", "false");
-      document.body.style.overflow = "hidden";
-    };
+  // const preApplyNotice = document.getElementById("preApplyNotice");
+  // if (preApplyNotice) {
+  //   const closeButtons = preApplyNotice.querySelectorAll("[data-close-notice]");
+  //   const closeNotice = () => {
+  //     preApplyNotice.classList.remove("open");
+  //     preApplyNotice.setAttribute("aria-hidden", "true");
+  //     document.body.style.overflow = "";
+  //   };
+  //   const openNotice = () => {
+  //     preApplyNotice.classList.add("open");
+  //     preApplyNotice.setAttribute("aria-hidden", "false");
+  //     document.body.style.overflow = "hidden";
+  //   };
 
-    closeButtons.forEach((btn) => btn.addEventListener("click", closeNotice));
-    preApplyNotice.addEventListener("click", (e) => {
-      if (e.target === preApplyNotice) closeNotice();
-    });
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && preApplyNotice.classList.contains("open")) {
-        closeNotice();
-      }
-    });
+  //   closeButtons.forEach((btn) => btn.addEventListener("click", closeNotice));
+  //   preApplyNotice.addEventListener("click", (e) => {
+  //     if (e.target === preApplyNotice) closeNotice();
+  //   });
+  //   document.addEventListener("keydown", (e) => {
+  //     if (e.key === "Escape" && preApplyNotice.classList.contains("open")) {
+  //       closeNotice();
+  //     }
+  //   });
 
-    setTimeout(openNotice, 150);
-  }
+  //   setTimeout(openNotice, 150);
+  // }
 
   /* ──────────────────────────────────────────────────────────
      INPUT SANITIZATION
