@@ -19,7 +19,8 @@
   const TOTAL_STEPS = 9;
 
   const form = document.getElementById("applyForm");
-  if (!form) return;
+  if (!form || form.dataset.applyInit === "1") return;
+  form.dataset.applyInit = "1";
 
   /* ── Element refs ── */
   const steps = form.querySelectorAll(".apply-step");
@@ -254,18 +255,31 @@
     err.textContent = "Please make a selection.";
   }
 
-  /* Bind Next / Back buttons */
-  form.querySelectorAll("[data-next]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      if (validateStep(currentStep)) {
-        if (currentStep === 8) buildReviewSummary();
-        showStep(Math.min(TOTAL_STEPS, currentStep + 1));
-        saveDraft();
-      }
-    });
-  });
-  form.querySelectorAll("[data-prev]").forEach((btn) => {
-    btn.addEventListener("click", () => showStep(Math.max(1, currentStep - 1)));
+  /* Next / Back — delegated; validate the step that owns the button */
+  form.addEventListener("click", (e) => {
+    const nextBtn = e.target.closest("[data-next]");
+    if (nextBtn) {
+      const stepSection = nextBtn.closest(".apply-step");
+      const fromStep = stepSection
+        ? parseInt(stepSection.dataset.step, 10)
+        : currentStep;
+      if (!Number.isFinite(fromStep)) return;
+      if (!validateStep(fromStep)) return;
+      if (fromStep === 8) buildReviewSummary();
+      showStep(Math.min(TOTAL_STEPS, fromStep + 1));
+      saveDraft();
+      return;
+    }
+
+    const prevBtn = e.target.closest("[data-prev]");
+    if (prevBtn && !prevBtn.disabled) {
+      const stepSection = prevBtn.closest(".apply-step");
+      const fromStep = stepSection
+        ? parseInt(stepSection.dataset.step, 10)
+        : currentStep;
+      if (!Number.isFinite(fromStep)) return;
+      showStep(Math.max(1, fromStep - 1));
+    }
   });
 
   /* Click on rail to jump to completed step */
