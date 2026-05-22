@@ -5158,6 +5158,70 @@ body.has-sticky-cta .whatsapp-float {
   padding: 1rem 1.5rem 1.5rem 1.5rem;
 }
 
+/* Apply form — submission in progress (slides down from top) */
+.submit-notice {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 3500;
+  padding: 0 1rem;
+  transform: translateY(-110%);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.35s ease,
+    visibility 0.35s;
+  pointer-events: none;
+}
+.submit-notice.open {
+  transform: translateY(0);
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+.submit-notice-inner {
+  max-width: 720px;
+  margin: 0.75rem auto 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, var(--clr-primary-d), var(--clr-primary));
+  color: #fff;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+}
+.submit-notice-icon {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  margin-top: 2px;
+  animation: submitNoticeSpin 0.9s linear infinite;
+}
+.submit-notice-icon svg {
+  width: 28px;
+  height: 28px;
+  stroke: #fff;
+}
+.submit-notice-text strong {
+  display: block;
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+}
+.submit-notice-text p {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.9);
+}
+@keyframes submitNoticeSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* Map embed */
 .map-embed {
   width: 100%;

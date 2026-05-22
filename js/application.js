@@ -760,6 +760,46 @@
   /* ──────────────────────────────────────────────────────────
      SUBMIT — convert files to base64 and POST to Apps Script
      ────────────────────────────────────────────────────────── */
+  let submitInProgress = false;
+
+  const submitNotice = document.createElement("div");
+  submitNotice.id = "submitNotice";
+  submitNotice.className = "submit-notice";
+  submitNotice.setAttribute("role", "alert");
+  submitNotice.setAttribute("aria-live", "assertive");
+  submitNotice.setAttribute("aria-hidden", "true");
+  submitNotice.innerHTML = `
+    <div class="submit-notice-inner">
+      <span class="submit-notice-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round">
+          <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+        </svg>
+      </span>
+      <div class="submit-notice-text">
+        <strong>Submitting your application</strong>
+        <p>Please do not refresh or leave this page. Uploading documents and saving your application may take up to 30 seconds.</p>
+      </div>
+    </div>`;
+  document.body.appendChild(submitNotice);
+
+  function showSubmitNotice() {
+    submitInProgress = true;
+    submitNotice.classList.add("open");
+    submitNotice.setAttribute("aria-hidden", "false");
+  }
+
+  function hideSubmitNotice() {
+    submitInProgress = false;
+    submitNotice.classList.remove("open");
+    submitNotice.setAttribute("aria-hidden", "true");
+  }
+
+  window.addEventListener("beforeunload", (e) => {
+    if (!submitInProgress) return;
+    e.preventDefault();
+    e.returnValue = "";
+  });
+
   function fileToBase64(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -789,6 +829,7 @@
     if (!validateStep(9)) return;
     submitBtn.disabled = true;
     submitBtn.innerHTML = "Submitting…";
+    showSubmitNotice();
 
     const refId = generateRefId();
 
@@ -862,6 +903,8 @@
       /* If the endpoint is misconfigured (e.g. URL not set yet), fall through and still show success;
          the form data is logged to console as a backup so the team can see it. */
       console.warn("Apps Script POST failed — falling back. Payload:", payload);
+    } finally {
+      hideSubmitNotice();
     }
 
     /* 4. Show success */
