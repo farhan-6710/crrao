@@ -87,6 +87,35 @@
     });
   }
 
+  const ADMISSION_YEAR = 2026;
+
+  function numInRange(val, min, max) {
+    const n = parseFloat(val);
+    return Number.isFinite(n) && n >= min && n <= max;
+  }
+
+  function yearInRange(val, min, max) {
+    const y = parseInt(val, 10);
+    return Number.isFinite(y) && y >= min && y <= max;
+  }
+
+  /** First number in text (e.g. "92%", "9.8 CGPA"); null if none. */
+  function pctFromText(val) {
+    const m = String(val)
+      .replace(/,/g, "")
+      .match(/(\d+(?:\.\d+)?)/);
+    return m ? parseFloat(m[1]) : null;
+  }
+
+  function isPercentOk(val, allowStatusText) {
+    const t = val.trim();
+    if (!t) return true;
+    if (allowStatusText && /awaiting|pending|result/i.test(t)) return true;
+    const n = pctFromText(t);
+    if (n === null) return allowStatusText;
+    return n >= 0 && n <= 100;
+  }
+
   function validateStep(stepNum) {
     const stepEl = form.querySelector(`.apply-step[data-step="${stepNum}"]`);
     if (!stepEl) return true;
@@ -152,6 +181,64 @@
             return;
           }
         }
+        if (el.name === "ssc_year") {
+          if (!yearInRange(v, 2000, ADMISSION_YEAR)) {
+            markError(
+              el,
+              `Enter a valid year between 2000 and ${ADMISSION_YEAR}.`,
+            );
+            valid = false;
+            return;
+          }
+        }
+        if (el.name === "hsc_year") {
+          if (!yearInRange(v, 2020, ADMISSION_YEAR + 1)) {
+            markError(
+              el,
+              `Enter a valid year between 2020 and ${ADMISSION_YEAR + 1}.`,
+            );
+            valid = false;
+            return;
+          }
+          const sscY = parseInt(
+            form.querySelector('[name="ssc_year"]')?.value,
+            10,
+          );
+          if (Number.isFinite(sscY) && parseInt(v, 10) < sscY) {
+            markError(el, "Class 12 year cannot be before Class 10 year.");
+            valid = false;
+            return;
+          }
+        }
+        if (el.name === "ssc_pct") {
+          if (!isPercentOk(v, false)) {
+            markError(el, "Percentage must be between 0 and 100.");
+            valid = false;
+            return;
+          }
+        }
+        if (el.name === "hsc_pct") {
+          if (!isPercentOk(v, true)) {
+            markError(
+              el,
+              "Enter 0–100%, or a status such as Awaiting Result.",
+            );
+            valid = false;
+            return;
+          }
+        }
+        if (
+          el.name === "hsc_math" ||
+          el.name === "hsc_physics" ||
+          el.name === "hsc_chemistry" ||
+          el.name === "hsc_mpc_pct"
+        ) {
+          if (!numInRange(v, 0, 100)) {
+            markError(el, "Enter a value between 0 and 100.");
+            valid = false;
+            return;
+          }
+        }
         clearError(el);
       });
 
@@ -172,13 +259,26 @@
 
     /* Step 7: at least one of JEE percentile or EAPCET rank required */
     if (stepNum === 7) {
-      const jee = stepEl.querySelector('[name="jee_percentile"]').value.trim();
-      const eap = stepEl.querySelector('[name="eapcet_rank"]').value.trim();
+      const jeeEl = stepEl.querySelector('[name="jee_percentile"]');
+      const eapEl = stepEl.querySelector('[name="eapcet_rank"]');
+      const jee = jeeEl?.value.trim() || "";
+      const eap = eapEl?.value.trim() || "";
       if (!jee && !eap) {
         valid = false;
         alert(
           "Please enter at least one of JEE Main 2026 percentile or TS EAPCET 2026 rank.",
         );
+      }
+      if (jee && !numInRange(jee, 0, 100)) {
+        markError(jeeEl, "Percentile must be between 0 and 100.");
+        valid = false;
+      } else if (jee) clearError(jeeEl);
+      if (eap) {
+        const rank = parseInt(eap, 10);
+        if (!Number.isFinite(rank) || rank < 1) {
+          markError(eapEl, "Enter a valid rank (1 or higher).");
+          valid = false;
+        } else clearError(eapEl);
       }
     }
 
