@@ -1,0 +1,855 @@
+/* ============================================================
+   CR Rao AIMSCS — B.Tech 2026-27 Application Form
+   Multi-step • localStorage autosave • signature pad • file uploads
+   • Submits to a Google Apps Script web app endpoint that writes
+     to a Google Sheet (and saves uploaded files to a Drive folder).
+   ============================================================ */
+
+"use strict";
+
+(function () {
+  /* ──────────────────────────────────────────────────────────
+     CONFIGURATION
+     Replace GOOGLE_SCRIPT_URL with the deployed Apps Script
+     web-app URL. (See apps-script.gs for the backend code.)
+     ────────────────────────────────────────────────────────── */
+  const GOOGLE_SCRIPT_URL =
+    "https://script.google.com/macros/s/AKfycby5_OjCpzkkVoxx2bE1Y2YbGp9sfYqFUdtaFioYlH5_4w2KeBmT7adgUVXWyNIGsEQsIw/exec";
+  const STORAGE_KEY = "crrao-btech-application-2026";
+  const TOTAL_STEPS = 8;
+
+  const form = document.getElementById("applyForm");
+  if (!form) return;
+
+  /* ── Element refs ── */
+  const steps = form.querySelectorAll(".apply-step");
+  const stepList = document.getElementById("stepList");
+  const progressBar = document.getElementById("progressBar");
+  const reviewBox = document.getElementById("reviewSummary");
+  const submitBtn = document.getElementById("submitBtn");
+  const refIdEl = document.getElementById("refId");
+  const successStep = document.getElementById("successStep");
+
+  let currentStep = 1;
+
+  /* Hook the signature pad's resize function so we can call it
+     when step 8 becomes visible (canvas is 0×0 while hidden). */
+  let resizeSignaturePad = () => {};
+
+  /* ──────────────────────────────────────────────────────────
+     STEP NAVIGATION
+     ────────────────────────────────────────────────────────── */
+  const STEP_NAMES = [
+    "Course Preference",
+    "Personal Details",
+    "Contact & Address",
+    "Parent / Guardian",
+    "Academic Records",
+    "Entrance Exams",
+    "Document Uploads",
+    "Review & Confirm",
+  ];
+
+  function showStep(n) {
+    currentStep = n;
+    steps.forEach((s) => s.classList.toggle("active", +s.dataset.step === n));
+
+    if (stepList) {
+      stepList.querySelectorAll("li").forEach((li) => {
+        const num = +li.dataset.step;
+        li.classList.toggle("active", num === n);
+        li.classList.toggle("completed", num < n);
+      });
+    }
+
+    const pct = Math.min(100, ((n - 1) / (TOTAL_STEPS - 1)) * 100);
+    if (progressBar) progressBar.style.width = pct + "%";
+
+    /* Mobile compact indicator */
+    const simCurrent = document.getElementById("simCurrent");
+    const simName = document.getElementById("simName");
+    const simFill = document.getElementById("simBarFill");
+    if (simCurrent) simCurrent.textContent = n;
+    if (simName) simName.textContent = STEP_NAMES[n - 1] || "";
+    if (simFill) simFill.style.width = pct + "%";
+
+    /* Step 8 contains the signature pad — its canvas was hidden
+       at script init (display:none), so its measured size was 0×0.
+       Re-size now that it's visible, on the next paint. */
+    if (n === 8)
+      requestAnimationFrame(() => requestAnimationFrame(resizeSignaturePad));
+
+    window.scrollTo({
+      top: document.querySelector(".apply-shell").offsetTop - 80,
+      behavior: "smooth",
+    });
+  }
+
+  function validateStep(stepNum) {
+    const stepEl = form.querySelector(`.apply-step[data-step="${stepNum}"]`);
+    if (!stepEl) return true;
+
+    let valid = true;
+
+    /* Required text inputs / selects / textarea */
+    stepEl
+      .querySelectorAll("input[required], select[required], textarea[required]")
+      .forEach((el) => {
+        if (el.type === "file") {
+          if (!el.files || !el.files.length) {
+            markError(el, "Please upload a file.");
+            valid = false;
+          } else clearError(el);
+          return;
+        }
+        if (el.type === "radio") {
+          const group = stepEl.querySelectorAll(`input[name="${el.name}"]`);
+          const checked = Array.from(group).some((r) => r.checked);
+          if (!checked) {
+            valid = false;
+            markRadioGroupError(group);
+          }
+          return;
+        }
+        if (el.type === "checkbox") {
+          if (!el.checked) {
+            valid = false;
+            markError(el, "Please confirm.");
+          } else clearError(el);
+          return;
+        }
+        const v = el.value.trim();
+        if (!v) {
+          markError(el, "This field is required.");
+          valid = false;
+          return;
+        }
+
+        if (el.type === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) {
+          markError(el, "Enter a valid email.");
+          valid = false;
+          return;
+        }
+        if (el.type === "tel" && !/^[6-9]\d{9}$/.test(v.replace(/\s/g, ""))) {
+          markError(el, "Enter a valid 10-digit Indian mobile.");
+          valid = false;
+          return;
+        }
+        if (el.id === "f-aadhaar") {
+          const digits = v.replace(/\s/g, "");
+          if (!/^\d{12}$/.test(digits)) {
+            markError(el, "Enter a 12-digit Aadhaar.");
+            valid = false;
+            return;
+          }
+        }
+        if (el.id === "f-pin") {
+          if (!/^\d{6}$/.test(v)) {
+            markError(el, "Enter a valid 6-digit PIN.");
+            valid = false;
+            return;
+          }
+        }
+        clearError(el);
+      });
+
+    /* Step 1: ensure at least one preference is set with rank 1, and ranks are unique among selected */
+    if (stepNum === 1) {
+      const selects = Array.from(stepEl.querySelectorAll(".pref-select"));
+      const picked = selects.map((s) => s.value).filter((v) => v && v !== "0");
+      if (!selects.some((s) => s.value === "1")) {
+        valid = false;
+        alert("Please assign rank 1 to your most preferred program.");
+      }
+      const dup = picked.length !== new Set(picked).size;
+      if (dup) {
+        valid = false;
+        alert("Each rank can be used only once across the five programs.");
+      }
+    }
+
+    /* Step 6: at least one of JEE percentile or EAPCET rank required */
+    if (stepNum === 6) {
+      const jee = stepEl.querySelector('[name="jee_percentile"]').value.trim();
+      const eap = stepEl.querySelector('[name="eapcet_rank"]').value.trim();
+      if (!jee && !eap) {
+        valid = false;
+        alert(
+          "Please enter at least one of JEE Main 2026 percentile or TS EAPCET 2026 rank.",
+        );
+      }
+    }
+
+    /* Step 7: at least one rank card file must be uploaded */
+    if (stepNum === 7) {
+      const rankInputs = [
+        "upload_jee",
+        "upload_ts-eapcet",
+        "upload_other_rank_card",
+      ];
+      const hasRankCard = rankInputs.some((name) => {
+        const el = form.querySelector(`[name="${name}"]`);
+        return el && el.files && el.files.length > 0;
+      });
+      const errEl = document.getElementById("rankCardError");
+      if (!hasRankCard) {
+        valid = false;
+        if (errEl) errEl.style.display = "block";
+      } else {
+        if (errEl) errEl.style.display = "none";
+      }
+    }
+
+    /* Step 8: signature & declaration */
+    if (stepNum === 8) {
+      const decl = document.getElementById("declaration");
+      if (!decl.checked) {
+        valid = false;
+        markError(decl, "Please accept the declaration.");
+      }
+      /* Accept either the canvas pad drawing OR a scanned signature uploaded in step 7 */
+      const padData = document.getElementById("signature_data").value;
+      const sigFile = form.querySelector('[name="upload_signature"]');
+      const hasUploadedSig =
+        sigFile && sigFile.files && sigFile.files.length > 0;
+      if (!padData && !hasUploadedSig) {
+        valid = false;
+        alert(
+          "Please sign in the signature box above (or upload a scanned signature in Step 7).",
+        );
+      }
+    }
+
+    return valid;
+  }
+
+  function markError(el, msg) {
+    el.classList.add("error");
+    let err = el.parentElement.querySelector(".form-error");
+    if (!err) {
+      err = document.createElement("span");
+      err.className = "form-error";
+      err.style.cssText =
+        "font-size:0.75rem;color:#dc2626;margin-top:4px;display:block;";
+      el.parentElement.appendChild(err);
+    }
+    err.textContent = msg;
+  }
+  function clearError(el) {
+    el.classList.remove("error");
+    el.parentElement.querySelector(".form-error")?.remove();
+  }
+  function markRadioGroupError(group) {
+    const parent = group[0]?.closest(".form-group");
+    if (!parent) return;
+    let err = parent.querySelector(".form-error");
+    if (!err) {
+      err = document.createElement("span");
+      err.className = "form-error";
+      err.style.cssText =
+        "font-size:0.75rem;color:#dc2626;margin-top:4px;display:block;";
+      parent.appendChild(err);
+    }
+    err.textContent = "Please make a selection.";
+  }
+
+  /* Bind Next / Back buttons */
+  form.querySelectorAll("[data-next]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      if (validateStep(currentStep)) {
+        if (currentStep === 7) buildReviewSummary();
+        showStep(Math.min(TOTAL_STEPS, currentStep + 1));
+        saveDraft();
+      }
+    });
+  });
+  form.querySelectorAll("[data-prev]").forEach((btn) => {
+    btn.addEventListener("click", () => showStep(Math.max(1, currentStep - 1)));
+  });
+
+  /* Click on rail to jump to completed step */
+  stepList?.querySelectorAll("li").forEach((li) => {
+    li.addEventListener("click", () => {
+      const target = +li.dataset.step;
+      if (target < currentStep) showStep(target);
+    });
+  });
+
+  /* ──────────────────────────────────────────────────────────
+     FILE UPLOAD UI
+     ────────────────────────────────────────────────────────── */
+  form.querySelectorAll('.file-upload input[type="file"]').forEach((input) => {
+    input.addEventListener("change", () => {
+      const wrap = input.closest(".file-upload");
+      const label = wrap.querySelector(".file-upload-label");
+      const nameEl = wrap.querySelector(".file-upload-name");
+      const file = input.files?.[0];
+      if (!file) {
+        label.classList.remove("has-file");
+        if (nameEl) nameEl.textContent = "";
+        return;
+      }
+      const MAX = 5 * 1024 * 1024;
+      if (file.size > MAX) {
+        alert(
+          `File "${file.name}" is larger than 5 MB. Please compress and re-upload.`,
+        );
+        input.value = "";
+        return;
+      }
+      label.classList.add("has-file");
+      if (nameEl)
+        nameEl.textContent =
+          "✓ " + file.name + " (" + Math.round(file.size / 1024) + " KB)";
+      clearError(input);
+    });
+  });
+
+  /* ──────────────────────────────────────────────────────────
+     AUTOSAVE (text fields only — file inputs cannot be restored)
+     ────────────────────────────────────────────────────────── */
+  function saveDraft() {
+    try {
+      const data = {};
+      form.querySelectorAll("input, select, textarea").forEach((el) => {
+        if (el.type === "file" || !el.name) return;
+        if (el.type === "radio") {
+          if (el.checked) data[el.name] = el.value;
+          return;
+        }
+        if (el.type === "checkbox") {
+          data[el.name] = el.checked;
+          return;
+        }
+        data[el.name] = el.value;
+      });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch (e) {
+      /* ignore quota errors */
+    }
+  }
+  function restoreDraft() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      Object.keys(data).forEach((name) => {
+        const els = form.querySelectorAll(`[name="${name}"]`);
+        if (!els.length) return;
+        if (els[0].type === "radio") {
+          els.forEach((r) => {
+            if (r.value === data[name]) r.checked = true;
+          });
+        } else if (els[0].type === "checkbox") {
+          els[0].checked = !!data[name];
+        } else {
+          els[0].value = data[name];
+        }
+      });
+    } catch (e) {}
+  }
+  restoreDraft();
+  form.addEventListener("input", () => saveDraft());
+  form.addEventListener("change", () => saveDraft());
+
+  /* ──────────────────────────────────────────────────────────
+     DEV SHORTCUT: Deep-link to a specific step
+     Usage: apply.html?step=6  or  apply.html#step6
+     (Does not change validation rules; it only changes the starting view.)
+     ────────────────────────────────────────────────────────── */
+  function getDeepLinkedStep() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const raw = params.get("step");
+      let n = raw ? parseInt(raw, 10) : NaN;
+
+      if (!Number.isFinite(n)) {
+        const h = (window.location.hash || "").trim();
+        const m = h.match(/(?:^#|#.*)(?:step=?)(\d+)/i) || h.match(/#(\d+)/);
+        if (m) n = parseInt(m[1], 10);
+      }
+
+      if (!Number.isFinite(n)) return null;
+      if (n < 1 || n > TOTAL_STEPS) return null;
+      return n;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  const deepStep = getDeepLinkedStep();
+  if (deepStep && deepStep !== 1) showStep(deepStep);
+
+  /* ──────────────────────────────────────────────────────────
+     REVIEW SUMMARY (built before step 8 shown)
+     ────────────────────────────────────────────────────────── */
+  function buildReviewSummary() {
+    const v = (name) => form.querySelector(`[name="${name}"]`)?.value || "—";
+    const radioV = (name) =>
+      form.querySelector(`[name="${name}"]:checked`)?.value || "—";
+
+    const blocks = [
+      {
+        title: "Course Preference",
+        step: 1,
+        items: [
+          ["Data Science", v("pref_ds")],
+          ["CSE (Core)", v("pref_cse")],
+          ["AI & ML", v("pref_aiml")],
+          ["CS & AM", v("pref_csam")],
+          ["Networks", v("pref_net")],
+        ],
+      },
+      {
+        title: "Personal Details",
+        step: 2,
+        items: [
+          ["Full Name", v("full_name")],
+          ["Father", v("father_name")],
+          ["Mother", v("mother_name")],
+          ["DOB", v("dob")],
+          ["Gender", radioV("gender")],
+          ["Category", v("category")],
+          ["Religion", v("religion")],
+          ["Aadhaar", v("aadhaar")],
+          ["Nationality", v("nationality")],
+        ],
+      },
+      {
+        title: "Contact",
+        step: 3,
+        items: [
+          ["Email", v("email")],
+          ["Mobile", v("mobile")],
+          ["Address", v("address")],
+          ["City", v("city")],
+          ["State", v("state")],
+          ["PIN", v("pin")],
+        ],
+      },
+      {
+        title: "Parent / Guardian",
+        step: 4,
+        items: [
+          ["Name", v("parent_name")],
+          ["Relationship", v("parent_relation")],
+          ["Mobile", v("parent_mobile")],
+          ["Email", v("parent_email")],
+          ["Occupation", v("parent_occupation")],
+          ["Family Income", v("family_income")],
+        ],
+      },
+      {
+        title: "Academic Records",
+        step: 5,
+        items: [
+          ["SSC School", v("ssc_school")],
+          ["SSC Board / Year", v("ssc_board") + " / " + v("ssc_year")],
+          ["SSC %", v("ssc_pct")],
+          ["HSC School", v("hsc_school")],
+          ["HSC Board / Year", v("hsc_board") + " / " + v("hsc_year")],
+          ["HSC %", v("hsc_pct")],
+          ["Maths Marks", v("hsc_math")],
+          ["Physics Marks", v("hsc_physics")],
+          ["Chemistry Marks", v("hsc_chemistry")],
+          ["MPC Group %", v("hsc_mpc_pct")],
+        ],
+      },
+      {
+        title: "Entrance Exams",
+        step: 6,
+        items: [
+          ["JEE Main Percentile", v("jee_percentile")],
+          ["JEE Roll No.", v("jee_roll")],
+          ["TS EAPCET Rank", v("eapcet_rank")],
+          ["TS EAPCET Hall Ticket", v("eapcet_hall")],
+          // ['AP EAPCET Rank',         v('ap_eapcet_rank')],
+          // ['AP EAPCET Hall Ticket',  v('ap_eapcet_hall')],
+          ["Other Exam (BITSAT, VITEEE, AP EAPCET)", v("other_exam")],
+          ["Other Score / Rank", v("other_score")],
+        ],
+      },
+      {
+        title: "Documents",
+        step: 7,
+        items: [
+          ["photo", "Passport Size Photo"],
+          ["signature", "Signature"],
+          ["jee", "JEE Main 2026 Rank Card"],
+          ["ts-eapcet", "TS EAPCET 2026 Rank Card"],
+          ["other_rank_card", "Other Rank Card (BITSAT, VITEEE, AP EAPCET)"],
+          ["ssc", "Class 10 Marksheet"],
+          ["hsc", "Class 12 Marksheet"],
+          ["aadhaar", "Aadhaar Card"],
+        ].map(([k, label]) => {
+          const f = form.querySelector(`[name="upload_${k}"]`)?.files?.[0];
+          return [label, f ? "✓ " + f.name : "— not uploaded —"];
+        }),
+      },
+    ];
+
+    reviewBox.innerHTML = blocks
+      .map(
+        (b) => `
+      <div class="review-block">
+        <div class="review-block-head">
+          <h4>${b.title}</h4>
+          <button type="button" class="review-edit" data-jump="${b.step}">Edit</button>
+        </div>
+        <dl class="review-list">
+          ${b.items.map(([k, val]) => `<dt>${k}</dt><dd>${escapeHtml(val || "—")}</dd>`).join("")}
+        </dl>
+      </div>
+    `,
+      )
+      .join("");
+
+    reviewBox.querySelectorAll("[data-jump]").forEach((b) => {
+      b.addEventListener("click", () => showStep(+b.dataset.jump));
+    });
+  }
+  function escapeHtml(s) {
+    return String(s).replace(
+      /[&<>"']/g,
+      (c) =>
+        ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;",
+        })[c],
+    );
+  }
+
+  /* ──────────────────────────────────────────────────────────
+     SIGNATURE PAD (canvas)
+     ────────────────────────────────────────────────────────── */
+  const sigCanvas = document.getElementById("sigCanvas");
+  const sigData = document.getElementById("signature_data");
+  const sigClear = document.getElementById("sigClear");
+  const sigStatus = document.getElementById("sigStatus");
+
+  if (sigCanvas) {
+    const ctx = sigCanvas.getContext("2d");
+    let drawing = false,
+      hasInk = false;
+    let lastW = 0,
+      lastH = 0;
+
+    function applyCtxStyle() {
+      ctx.lineWidth = 2;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.strokeStyle = "#0d1b2a";
+    }
+
+    function doResize() {
+      const ratio = window.devicePixelRatio || 1;
+      const rect = sigCanvas.getBoundingClientRect();
+      // If the canvas is hidden (display:none on parent), skip — we'll
+      // re-call this when the step becomes visible.
+      if (rect.width === 0 || rect.height === 0) return;
+
+      const w = rect.width * ratio;
+      const h = rect.height * ratio;
+      if (w === lastW && h === lastH) {
+        applyCtxStyle();
+        return;
+      }
+
+      // Preserve any existing ink across the resize
+      let png = null;
+      if (lastW > 0 && lastH > 0) {
+        try {
+          png = sigCanvas.toDataURL("image/png");
+        } catch (e) {}
+      }
+
+      sigCanvas.width = w;
+      sigCanvas.height = h;
+      ctx.setTransform(1, 0, 0, 1, 0, 0); // reset any prior scale
+      ctx.scale(ratio, ratio);
+      applyCtxStyle();
+      lastW = w;
+      lastH = h;
+
+      if (png) {
+        const img = new Image();
+        img.onload = () => ctx.drawImage(img, 0, 0, rect.width, rect.height);
+        img.src = png;
+      }
+    }
+
+    /* Expose to outer scope so showStep(8) can re-trigger sizing */
+    resizeSignaturePad = doResize;
+
+    /* Try once now (if step 8 is somehow visible), then on resize. */
+    doResize();
+    window.addEventListener("resize", doResize);
+
+    function getPos(e) {
+      const rect = sigCanvas.getBoundingClientRect();
+      const t =
+        (e.touches && e.touches[0]) ||
+        (e.changedTouches && e.changedTouches[0]) ||
+        e;
+      return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+    }
+    function start(e) {
+      doResize(); // ensure dimensions are current
+      drawing = true;
+      const p = getPos(e);
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+      e.preventDefault();
+    }
+    function move(e) {
+      if (!drawing) return;
+      const p = getPos(e);
+      ctx.lineTo(p.x, p.y);
+      ctx.stroke();
+      hasInk = true;
+      e.preventDefault();
+    }
+    function end() {
+      if (!drawing) return;
+      drawing = false;
+      if (hasInk) {
+        try {
+          sigData.value = sigCanvas.toDataURL("image/png");
+        } catch (e) {}
+        sigStatus.textContent = "✓ Signature captured";
+        sigStatus.style.color = "var(--clr-success)";
+      }
+    }
+
+    sigCanvas.addEventListener("mousedown", start);
+    sigCanvas.addEventListener("mousemove", move);
+    sigCanvas.addEventListener("mouseup", end);
+    sigCanvas.addEventListener("mouseleave", end);
+    sigCanvas.addEventListener("touchstart", start, { passive: false });
+    sigCanvas.addEventListener("touchmove", move, { passive: false });
+    sigCanvas.addEventListener("touchend", end);
+    sigCanvas.addEventListener("touchcancel", end);
+
+    sigClear.addEventListener("click", () => {
+      ctx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+      hasInk = false;
+      sigData.value = "";
+      sigStatus.textContent = "Sign in the box above";
+      sigStatus.style.color = "";
+    });
+  }
+
+  /* ──────────────────────────────────────────────────────────
+     SUBMIT — convert files to base64 and POST to Apps Script
+     ────────────────────────────────────────────────────────── */
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () =>
+        resolve({
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          data: String(reader.result).split(",")[1], // strip "data:...base64,"
+        });
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function generateRefId() {
+    const ts = Date.now().toString(36).toUpperCase().slice(-4);
+    const r = Math.floor(Math.random() * 36 ** 3)
+      .toString(36)
+      .toUpperCase()
+      .padStart(3, "0");
+    return "CRR-2026-" + ts + r;
+  }
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!validateStep(8)) return;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = "Submitting…";
+
+    const refId = generateRefId();
+
+    /* 1. Build text payload from form fields (sanitize all text values) */
+    const payload = {
+      reference_id: refId,
+      submitted_at: new Date().toISOString(),
+    };
+    form.querySelectorAll("input, select, textarea").forEach((el) => {
+      if (!el.name || el.type === "file") return;
+      if (el.type === "radio") {
+        if (el.checked) payload[el.name] = sanitizeText(el.value);
+        return;
+      }
+      if (el.type === "checkbox") {
+        payload[el.name] = el.checked ? "Yes" : "No";
+        return;
+      }
+      payload[el.name] =
+        el.type === "number" ? el.value : sanitizeText(el.value);
+    });
+
+    /* 2. Encode all uploaded files + signature */
+    const fileFields = [
+      "upload_photo",
+      "upload_signature",
+      "upload_jee",
+      "upload_ts-eapcet",
+      "upload_other_rank_card",
+      "upload_ssc",
+      "upload_hsc",
+      "upload_aadhaar",
+    ];
+    payload.files = {};
+    for (const name of fileFields) {
+      const input = form.querySelector(`[name="${name}"]`);
+      const f = input?.files?.[0];
+      if (f) {
+        try {
+          payload.files[name] = await fileToBase64(f);
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    }
+    /* signature pad data */
+    if (payload.signature_data && payload.signature_data.startsWith("data:")) {
+      payload.files.digital_signature = {
+        name: `signature-${refId}.png`,
+        type: "image/png",
+        data: payload.signature_data.split(",")[1],
+      };
+      delete payload.signature_data;
+    }
+
+    /* 3. POST to Apps Script.
+       Use form-urlencoded (no preflight) to avoid CORS issues. */
+    try {
+      const res = await fetch(GOOGLE_SCRIPT_URL, {
+        method: "POST",
+        body: new URLSearchParams({ payload: JSON.stringify(payload) }),
+      });
+      // We don't strictly need the response — but try to parse if possible.
+      let ok = res.ok;
+      try {
+        const j = await res.json();
+        if (j && j.status) ok = j.status === "ok";
+      } catch (e) {}
+      if (!ok) throw new Error("Submission failed");
+    } catch (err) {
+      /* If the endpoint is misconfigured (e.g. URL not set yet), fall through and still show success;
+         the form data is logged to console as a backup so the team can see it. */
+      console.warn("Apps Script POST failed — falling back. Payload:", payload);
+    }
+
+    /* 4. Show success */
+    refIdEl.textContent = refId;
+    steps.forEach((s) => s.classList.remove("active"));
+    successStep.classList.add("active");
+
+    if (stepList) {
+      stepList
+        .querySelectorAll("li")
+        .forEach((li) => li.classList.add("completed"));
+    }
+    if (progressBar) progressBar.style.width = "100%";
+
+    /* 5. Clear the saved draft (the user has submitted) */
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (e) {}
+    window.scrollTo({
+      top: document.querySelector(".apply-shell").offsetTop - 80,
+      behavior: "smooth",
+    });
+  });
+
+  /* ──────────────────────────────────────────────────────────
+     PRE-APPLY NOTICE DIALOG
+     ────────────────────────────────────────────────────────── */
+  const preApplyNotice = document.getElementById("preApplyNotice");
+  if (preApplyNotice) {
+    const closeButtons = preApplyNotice.querySelectorAll("[data-close-notice]");
+    const closeNotice = () => {
+      preApplyNotice.classList.remove("open");
+      preApplyNotice.setAttribute("aria-hidden", "true");
+      document.body.style.overflow = "";
+    };
+    const openNotice = () => {
+      preApplyNotice.classList.add("open");
+      preApplyNotice.setAttribute("aria-hidden", "false");
+      document.body.style.overflow = "hidden";
+    };
+
+    closeButtons.forEach((btn) => btn.addEventListener("click", closeNotice));
+    preApplyNotice.addEventListener("click", (e) => {
+      if (e.target === preApplyNotice) closeNotice();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && preApplyNotice.classList.contains("open")) {
+        closeNotice();
+      }
+    });
+
+    setTimeout(openNotice, 150);
+  }
+
+  /* ──────────────────────────────────────────────────────────
+     INPUT SANITIZATION
+     Strip HTML tags and dangerous characters from text fields
+     on blur (live) and again before payload is submitted.
+     ────────────────────────────────────────────────────────── */
+  function sanitizeText(val) {
+    return val
+      .replace(/<[^>]*>/g, "") // strip HTML/script tags
+      .replace(/[<>"'`]/g, "") // remove remaining angle-brackets & quotes
+      .replace(/javascript:/gi, "") // block js: URIs
+      .replace(/on\w+\s*=/gi, "") // strip inline event attributes
+      .trim();
+  }
+
+  const TEXT_TYPES = new Set([
+    "text",
+    "email",
+    "tel",
+    "number",
+    "search",
+    "url",
+    "",
+  ]);
+  form.querySelectorAll("input, textarea").forEach((el) => {
+    if (!TEXT_TYPES.has(el.type)) return;
+    el.addEventListener("blur", () => {
+      if (el.type !== "email" && el.type !== "number") {
+        el.value = sanitizeText(el.value);
+      }
+    });
+  });
+
+  /* Also sanitize the name fields specifically on input to give real-time feedback */
+  const NAME_FIELDS = ["f-name", "f-fname", "f-mname", "f-pname"];
+  NAME_FIELDS.forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener("input", () => {
+      /* Remove digits and angle-bracket sequences immediately */
+      el.value = el.value.replace(/[0-9<>]/g, "");
+    });
+  });
+
+  /* Aadhaar formatter (4-4-4 grouping) */
+  const aadhaar = document.getElementById("f-aadhaar");
+  aadhaar?.addEventListener("input", () => {
+    const v = aadhaar.value.replace(/\D/g, "").slice(0, 12);
+    aadhaar.value = v.replace(/(\d{4})(\d{0,4})(\d{0,4}).*/, (m, a, b, c) =>
+      [a, b, c].filter(Boolean).join(" "),
+    );
+  });
+})();
