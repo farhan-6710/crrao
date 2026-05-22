@@ -277,7 +277,7 @@
         const rank = parseInt(eap, 10);
         if (!Number.isFinite(rank) || rank < 1) {
           markError(eapEl, "Enter a valid rank (1 or higher).");
-          valid = false;
+          valid = false;            
         } else clearError(eapEl);
       }
     }
