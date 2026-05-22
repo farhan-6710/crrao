@@ -6231,8 +6231,8 @@ body.has-sticky-cta .whatsapp-float {
   color: var(--clr-primary);
 }
 .step-list li::before {
-  content: counter(step);
-  counter-increment: step;
+  /* Use --step-num (set in JS) instead of CSS counters — Safari mis-numbers them */
+  content: var(--step-num, attr(data-step));
   width: 26px;
   height: 26px;
   flex-shrink: 0;
@@ -6245,9 +6245,6 @@ body.has-sticky-cta .whatsapp-float {
   font-size: 0.78rem;
   font-weight: 700;
   transition: var(--trans-fast);
-}
-.step-list {
-  counter-reset: step;
 }
 .step-list li.active {
   color: var(--clr-primary-d);
@@ -6262,8 +6259,6 @@ body.has-sticky-cta .whatsapp-float {
   color: #fff;
   content: "✓";
 }
-
-/* .step-list li.completed { counter-increment: step; } */
 
 .step-rail-progress {
   margin-top: 1.25rem;

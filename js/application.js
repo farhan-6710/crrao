@@ -61,6 +61,7 @@
         const num = +li.dataset.step;
         li.classList.toggle("active", num === n);
         li.classList.toggle("completed", num < n);
+        li.style.setProperty("--step-num", `"${num}"`);
       });
     }
 
@@ -494,6 +495,11 @@
 
   const deepStep = getDeepLinkedStep();
   if (deepStep && deepStep !== 1) showStep(deepStep);
+  else if (stepList) {
+    stepList.querySelectorAll("li").forEach((li) => {
+      li.style.setProperty("--step-num", `"${li.dataset.step}"`);
+    });
+  }
 
   /* ──────────────────────────────────────────────────────────
      REVIEW SUMMARY (built before step 9 shown)
