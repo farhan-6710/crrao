@@ -5157,6 +5157,12 @@ body.has-sticky-cta .whatsapp-float {
 .lead-popup-body {
   padding: 1rem 1.5rem 1.5rem 1.5rem;
 }
+@media (max-width: 767px) {
+  .lead-popup-body {
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
 
 /* Apply form — submission in progress (slides down from top) */
 .submit-notice {
