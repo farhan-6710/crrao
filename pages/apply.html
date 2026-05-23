@@ -1435,76 +1435,6 @@
               </div>
             </div> -->
 
-                <h3
-                  style="
-                    font-size: 1rem;
-                    color: var(--clr-primary);
-                    margin: 1.5rem 0 0.6rem;
-                  "
-                >
-                  Other (Optional)
-                </h3>
-                <div class="field-grid two">
-                  <div class="form-group">
-                    <label class="form-label" for="f-other-exam"
-                      >Other Entrance Exam</label
-                    >
-                    <input
-                      class="form-input"
-                      id="f-other-exam"
-                      name="other_exam"
-                      type="text"
-                      placeholder="e.g. BITSAT, VITEEE, AP EAPCET"
-                    />
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label" for="f-other-rank"
-                      >Score / Rank</label
-                    >
-                    <input
-                      class="form-input"
-                      id="f-other-rank"
-                      name="other_score"
-                      type="text"
-                    />
-                  </div>
-                </div>
-
-                <div
-                  class="apply-info-tile"
-                  style="
-                    margin-top: 1.25rem;
-                    background: var(--clr-amber-50, #fffbeb);
-                    border-color: var(--clr-amber-300, #fcd34d);
-                  "
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    aria-hidden="true"
-                    style="color: #b45309; flex-shrink: 0"
-                  >
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="12" y1="8" x2="12" y2="12" />
-                    <line x1="12" y1="16" x2="12.01" y2="16" />
-                  </svg>
-                  <div style="color: #78350f">
-                    <strong>Note:</strong> If you do not have a JEE Main 2026
-                    percentile <em>and</em> have not qualified in TS EAPCET 2026
-                    (i.e. at least one of these is not available), please
-                    <a
-                      href="contact.html"
-                      style="color: var(--clr-primary); font-weight: 600"
-                      >contact us</a
-                    >
-                    or check our website for the notification on
-                    <strong>"Spot Admissions"</strong> if seats are available.
-                  </div>
-                </div>
-
                 <div class="step-nav">
                   <button type="button" class="btn btn-back" data-prev>
                     Back
@@ -1639,8 +1569,7 @@
                     margin: 0 0 0.75rem;
                   "
                 >
-                  Upload <strong>at least one</strong> rank card: JEE Main 2026,
-                  TS EAPCET 2026, or Other.
+                  Upload <strong>at least one</strong> rank card: JEE Main 2026 or TS EAPCET 2026.
                 </p>
                 <div
                   id="rankCardError"
@@ -1716,41 +1645,12 @@
                     </div>
                   </div>
 
-                  <div class="form-group">
-                    <label class="form-label">Other Rank Card</label>
-                    <div class="file-upload">
-                      <label class="file-upload-label" for="up-other-rank">
-                        <svg
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="2"
-                          stroke-linecap="round"
-                        >
-                          <path
-                            d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
-                          />
-                          <polyline points="14 2 14 8 20 8" />
-                        </svg>
-                        <span class="file-prompt">Upload Other rank card</span>
-                        <span class="file-hint">PDF / JPG, &lt;5 MB</span>
-                      </label>
-                      <input
-                        type="file"
-                        id="up-other-rank"
-                        name="upload_other_rank_card"
-                        accept=".pdf,image/*"
-                        class="rank-card-input"
-                      />
-                      <span class="file-upload-name"></span>
-                    </div>
-                  </div>
                 </div>
 
                 <div class="upload-grid" style="margin-top: 1rem">
                   <div class="form-group">
                     <label class="form-label"
-                      >Class 10 Marksheet<span class="required-mark"
+                      >Class 10 Memo<span class="required-mark"
                         >*</span
                       ></label
                     >
@@ -1768,7 +1668,7 @@
                           />
                           <polyline points="14 2 14 8 20 8" />
                         </svg>
-                        <span class="file-prompt">Upload SSC marksheet</span>
+                        <span class="file-prompt">Upload SSC Memo</span>
                         <span class="file-hint">PDF / JPG, &lt;5 MB</span>
                       </label>
                       <input
@@ -1784,7 +1684,7 @@
 
                   <div class="form-group">
                     <label class="form-label"
-                      >Class 12 Marksheet<span class="required-mark"
+                      >Class 12 Memo<span class="required-mark"
                         >*</span
                       ></label
                     >
@@ -1802,7 +1702,7 @@
                           />
                           <polyline points="14 2 14 8 20 8" />
                         </svg>
-                        <span class="file-prompt">Upload HSC marksheet</span>
+                        <span class="file-prompt">Upload HSC Memo</span>
                         <span class="file-hint"
                           >PDF / JPG (or "Awaiting Result"), &lt;5 MB</span
                         >
@@ -1817,7 +1717,9 @@
                       <span class="file-upload-name"></span>
                     </div>
                   </div>
+                </div>
 
+                <div style="margin-top: 1rem">
                   <div class="form-group">
                     <label class="form-label"
                       >Aadhaar Card<span class="required-mark">*</span></label
@@ -1842,6 +1744,40 @@
                         type="file"
                         id="up-aadhaar"
                         name="upload_aadhaar"
+                        accept=".pdf,image/*"
+                        required
+                      />
+                      <span class="file-upload-name"></span>
+                    </div>
+                  </div>
+
+                  <div class="form-group" style="margin-top: 1rem">
+                    <label class="form-label"
+                      >Fee Payment Receipt<span class="required-mark"
+                        >*</span
+                      ></label
+                    >
+                    <div class="file-upload">
+                      <label class="file-upload-label" for="up-payment-receipt">
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                        >
+                          <path
+                            d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+                          />
+                          <polyline points="14 2 14 8 20 8" />
+                        </svg>
+                        <span class="file-prompt">Upload fee receipt</span>
+                        <span class="file-hint">PDF / JPG, &lt;5 MB</span>
+                      </label>
+                      <input
+                        type="file"
+                        id="up-payment-receipt"
+                        name="upload_payment_receipt"
                         accept=".pdf,image/*"
                         required
                       />

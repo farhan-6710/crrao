@@ -285,11 +285,7 @@
 
     /* Step 8: at least one rank card file must be uploaded */
     if (stepNum === 8) {
-      const rankInputs = [
-        "upload_jee",
-        "upload_ts-eapcet",
-        "upload_other_rank_card",
-      ];
+      const rankInputs = ["upload_jee", "upload_ts-eapcet"];
       const hasRankCard = rankInputs.some((name) => {
         const el = form.querySelector(`[name="${name}"]`);
         return el && el.files && el.files.length > 0;
@@ -584,10 +580,6 @@
           ["JEE Roll No.", v("jee_roll")],
           ["TS EAPCET Rank", v("eapcet_rank")],
           ["TS EAPCET Hall Ticket", v("eapcet_hall")],
-          // ['AP EAPCET Rank',         v('ap_eapcet_rank')],
-          // ['AP EAPCET Hall Ticket',  v('ap_eapcet_hall')],
-          ["Other Exam (BITSAT, VITEEE, AP EAPCET)", v("other_exam")],
-          ["Other Score / Rank", v("other_score")],
         ],
       },
       {
@@ -598,10 +590,10 @@
           ["signature", "Signature"],
           ["jee", "JEE Main 2026 Rank Card"],
           ["ts-eapcet", "TS EAPCET 2026 Rank Card"],
-          ["other_rank_card", "Other Rank Card (BITSAT, VITEEE, AP EAPCET)"],
-          ["ssc", "Class 10 Marksheet"],
-          ["hsc", "Class 12 Marksheet"],
+          ["ssc", "Class 10 Memo"],
+          ["hsc", "Class 12 Memo"],
           ["aadhaar", "Aadhaar Card"],
+          ["payment_receipt", "Fee Payment Receipt"],
         ].map(([k, label]) => {
           const f = form.querySelector(`[name="upload_${k}"]`)?.files?.[0];
           return [label, f ? "✓ " + f.name : "— not uploaded —"];
@@ -864,10 +856,10 @@
       "upload_signature",
       "upload_jee",
       "upload_ts-eapcet",
-      "upload_other_rank_card",
       "upload_ssc",
       "upload_hsc",
       "upload_aadhaar",
+      "upload_payment_receipt",
     ];
     payload.files = {};
     for (const name of fileFields) {

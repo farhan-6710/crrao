@@ -148,9 +148,9 @@ function doPost(e) {
           return (
             fileLinks.upload_other_rank_card || fileLinks.upload_ap_eapcet || ""
           );
-        case "SSC Marksheet":
+        case "SSC Memo":
           return fileLinks.upload_ssc || "";
-        case "HSC Marksheet":
+        case "HSC Memo":
           return fileLinks.upload_hsc || "";
         case "Aadhaar (Upload)":
           return fileLinks.upload_aadhaar || "";
@@ -259,8 +259,8 @@ const HEADER_ROW = [
   "JEE Rank Card",
   "EAPCET Rank Card",
   "Other Rank Card",
-  "SSC Marksheet",
-  "HSC Marksheet",
+  "SSC Memo",
+  "HSC Memo",
   "Aadhaar (Upload)",
 ];
 
